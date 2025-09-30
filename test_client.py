@@ -1,4 +1,6 @@
 import asyncio
+import json
+
 import hud
 from hud.datasets import Task
 from hud.agents import ClaudeAgent
@@ -24,9 +26,15 @@ async def test_environment_manual():
         await client.initialize()
         print("✅ Client initialized successfully")
 
-        print("\n2. Testing list_tasks tool...")
-        tasks_result = await client.call_tool(name="list_tasks")
-        print(f"Available tasks: {tasks_result}")
+        dataset_info = await client.call_tool(name="get_dataset_info")
+        dataset_info = json.loads(dataset_info.content[0].text)
+        dataset_len = dataset_info["total_tasks"]
+        
+        for i in range(dataset_len):
+            task = await client.call_tool(name="get_tasks", arguments={"start_index": i, "count": 1})
+            print(task)
+            print("--------------------------------")
+
 
     except Exception as e:
         print(f"❌ Error: {e}")

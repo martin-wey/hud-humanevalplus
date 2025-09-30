@@ -10,6 +10,8 @@ from datasets import load_dataset
 from hud.server import MCPServer
 from hud.server.context import attach_context
 
+from .context import HumanEvalEnvironment
+
 
 logging.basicConfig(
     stream=sys.stderr,
@@ -18,35 +20,68 @@ logging.basicConfig(
 )
 
 mcp = MCPServer(name="hud-humanevalplus")
-env = None  # persistent HumanEval+ dataset
+env: Optional[HumanEvalEnvironment] = None
 
 
 @mcp.tool
-async def list_tasks() -> dict:
+async def get_tasks(start_index: int = 0, count: int = 10) -> dict:
+    """
+    Get tasks from the dataset starting at a specific index.
+    Client is responsible for tracking position.
+    
+    Args:
+        start_index: Index to start from (0-based, default: 0)
+        count: Number of tasks to retrieve (default: 10)
+    """
     global env
-
-    # this should never happen
+    
     if env is None:
-        return {
-            "error": "Environment not initialized. Please wait for initialization to complete."
-        }
+        return {"error": "Environment not initialized"}
+    
+    try:
+        total_tasks = env.size()
+        start = max(0, min(start_index, total_tasks))
+        end = min(start + count, total_tasks)
 
-    tasks = env.get_task_cache()
-    # show first 3 tasks as examples
-    tasks_info = []
-    for task_id, task_data in list(tasks.items())[:3]:
-        tasks_info.append(
+        tasks_batch = env.get_tasks_slice(start, end)
+        
+        streamed_tasks = [
             {
-                "task_id": task_id,
-                "description": task_data["prompt"][:100] + "...",
-                "entry_point": task_data["entry_point"],
+                "task_id": task["task_id"],
+                "prompt": task["prompt"],
+                "test": task["test"],
+                "entry_point": task["entry_point"],
+                "canonical_solution": task["canonical_solution"]
             }
-        )
+            for task in tasks_batch
+        ]
+        
+        return {
+            "tasks": streamed_tasks,
+            "has_more": end < total_tasks,
+            "next_index": end
+        }
+        
+    except Exception as e:
+        logging.error(f"Get tasks failed: {e}", exc_info=True)
+        return {"error": f"Get tasks failed: {str(e)}"}
 
+
+@mcp.tool
+async def get_dataset_info() -> dict:
+    """Get information about the dataset."""
+    global env
+    
+    if env is None:
+        return {"error": "Environment not initialized"}
+    
+    total = env.size()
+    all_ids = env.get_all_task_ids()
+    
     return {
-        "total_tasks": len(tasks),
-        "sample_tasks": tasks_info,
-        "message": f"Showing first 3 of {len(tasks)} available tasks",
+        "total_tasks": int(total),
+        "sample_task_ids": all_ids[:10],
+        "message": f"Dataset contains {total} tasks"
     }
 
 
