@@ -1,20 +1,17 @@
 [build-system]
-requires = ["hatchling"]
+requires = [ "hatchling",]
 build-backend = "hatchling.build"
 
 [project]
 name = "hud-humanevalplus"
 version = "0.1.0"
-dependencies = [ 
-    "hud-python>=0.4.47", 
-    "datasets>=4.1.1"
-]
+dependencies = [ "hud-python>=0.4.47", "datasets>=4.1.1",]
 requires-python = ">=3.11,<3.13"
-authors = [
-  {name = "Martin Weyssow", email = "weyssowm@gmail.com"},
-]
 description = "HUD HumanEval+ Evaluation with Test Execution as MCP tools."
 license = "MIT"
+[[project.authors]]
+name = "Martin Weyssow"
+email = "weyssowm@gmail.com"
 
 [tool.hud]
 image = "humanevalplus:dev"
@@ -23,4 +20,4 @@ image = "humanevalplus:dev"
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/hud_controller"]
+packages = [ "src/hud_controller",]
