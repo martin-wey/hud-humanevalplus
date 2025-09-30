@@ -28,40 +28,40 @@ async def get_tasks(start_index: int = 0, count: int = 10) -> dict:
     """
     Get tasks from the dataset starting at a specific index.
     Client is responsible for tracking position.
-    
+
     Args:
         start_index: Index to start from (0-based, default: 0)
         count: Number of tasks to retrieve (default: 10)
     """
     global env
-    
+
     if env is None:
         return {"error": "Environment not initialized"}
-    
+
     try:
         total_tasks = env.size()
         start = max(0, min(start_index, total_tasks))
         end = min(start + count, total_tasks)
 
         tasks_batch = env.get_tasks_slice(start, end)
-        
+
         streamed_tasks = [
             {
                 "task_id": task["task_id"],
                 "prompt": task["prompt"],
                 "test": task["test"],
                 "entry_point": task["entry_point"],
-                "canonical_solution": task["canonical_solution"]
+                "canonical_solution": task["canonical_solution"],
             }
             for task in tasks_batch
         ]
-        
+
         return {
             "tasks": streamed_tasks,
             "has_more": end < total_tasks,
-            "next_index": end
+            "next_index": end,
         }
-        
+
     except Exception as e:
         logging.error(f"Get tasks failed: {e}", exc_info=True)
         return {"error": f"Get tasks failed: {str(e)}"}
@@ -71,17 +71,17 @@ async def get_tasks(start_index: int = 0, count: int = 10) -> dict:
 async def get_dataset_info() -> dict:
     """Get information about the dataset."""
     global env
-    
+
     if env is None:
         return {"error": "Environment not initialized"}
-    
+
     total = env.size()
     all_ids = env.get_all_task_ids()
-    
+
     return {
         "total_tasks": int(total),
         "sample_task_ids": all_ids[:10],
-        "message": f"Dataset contains {total} tasks"
+        "message": f"Dataset contains {total} tasks",
     }
 
 

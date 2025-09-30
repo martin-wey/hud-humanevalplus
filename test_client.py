@@ -8,10 +8,6 @@ from hud.clients import MCPClient
 
 
 async def test_environment_manual():
-    """Test the HumanEval+ environment step by step."""
-    print("🧪 Testing HumanEval+ Environment")
-    print("=" * 50)
-
     mcp_config = {
         "local": {
             "command": "docker",
@@ -29,12 +25,27 @@ async def test_environment_manual():
         dataset_info = await client.call_tool(name="get_dataset_info")
         dataset_info = json.loads(dataset_info.content[0].text)
         dataset_len = dataset_info["total_tasks"]
-        
-        for i in range(dataset_len):
-            task = await client.call_tool(name="get_tasks", arguments={"start_index": i, "count": 1})
-            print(task)
-            print("--------------------------------")
 
+        has_samples = True
+        i = 0
+        while has_samples:
+            tasks = await client.call_tool(
+                name="get_tasks", arguments={"start_index": i, "count": 1}
+            )
+            tasks_data = json.loads(tasks.content[0].text)["tasks"]
+
+            for task in tasks_data:
+                print(task["prompt"])
+                print("--------------------------------")
+
+                # 1. Prompt storage.
+                # 2. Generate a response using Claude Agent.
+                # 3. Manually call check_correctness tool (todo: implemented) to evaluate correctness of generated code.
+
+            has_samples = tasks_data["has_more"]
+            i = tasks_data["next_index"]
+
+            exit(1)
 
     except Exception as e:
         print(f"❌ Error: {e}")
